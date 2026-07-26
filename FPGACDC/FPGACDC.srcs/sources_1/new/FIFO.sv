@@ -41,11 +41,8 @@ module FIFO (
     
     logic [ADDR_WIDTH:0] rd_ptr ;
     logic [ADDR_WIDTH:0] wr_ptr ;
-    
-    logic [ADDR_WIDTH-1:0] wr_addr;
-    logic [ADDR_WIDTH-1:0] rd_addr;
-    logic  rd_wrap;
-    logic  wr_wrap;
+    logic [DATA_WIDTH-1:0] data [(2**ADDR_WIDTH)-1:0];   
+
 
     assign rd_addr = rd_ptr[ADDR_WIDTH-1:0];
     assign wr_addr = wr_ptr[ADDR_WIDTH-1:0];
@@ -65,10 +62,11 @@ module FIFO (
     logic [ADDR_WIDTH:0] binary_rd_ptr_synced;
     logic [ADDR_WIDTH:0] binary_wr_ptr_synced;
 
-    logic [DATA_WIDTH-1:0] data [(2**ADDR_WIDTH)-1:0];   
         
     assign grayCode_rd_ptr =  rd_ptr ^ rd_ptr >> 1;
     assign grayCode_wr_ptr =  wr_ptr ^ wr_ptr >>1;
+    
+    
     
     genvar i;
      generate
@@ -82,30 +80,23 @@ module FIFO (
         //Syncronizer
         rd_ptr_syncronizer <= grayCode_rd_ptr;
         grayCode_rd_ptr_synced <= rd_ptr_syncronizer;
-        
+            
         if(wr_rst) begin 
             almost_full <= 0;
             full  <= 0;
             wr_ptr <= 0;          
         end
         else begin 
-                if (wr_ptr - rd_ptr >= 30 ) begin 
-                    almost_full <=1; 
-                end
-                else begin 
-                    almost_full <=0;
-                    if((wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH]))
-                        full <= 1;
-                    else begin 
-                        full <= 0;
-                        if(wr_en & !full & !almost_full) begin 
-                            data[wr_addr] <= wr_data;
-                            wr_ptr <= wr_ptr +1;
-                        end
-                    end
-                end
-         end
-        
+            if (wr_ptr - binary_rd_ptr_synced >= 30 ) almost_full <= 1;                  
+            else almost_full <= 0;
+                               
+            if((wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH])) full <= 1;
+            else full <= 0;            
+              
+            if(wr_en && !full) begin 
+                data[wr_addr] <= wr_data; // Can only write to data when not full or almost full
+                wr_ptr <= wr_ptr +1;
+            end         
+        end        
     end 
-    
 endmodule
