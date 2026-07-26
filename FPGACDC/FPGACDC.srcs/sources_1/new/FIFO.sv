@@ -82,16 +82,15 @@ module FIFO (
     endgenerate
 
     always_ff@(posedge wr_clk, posedge wr_rst) begin 
-        //Syncronizer
-        rd_ptr_syncronizer <= grayCode_rd_ptr;
-        grayCode_rd_ptr_synced <= rd_ptr_syncronizer;
-            
         if(wr_rst) begin 
             almost_full <= 0;
             full  <= 0;
             wr_ptr <= 0;          
         end
         else begin 
+            //Syncronizer
+            rd_ptr_syncronizer <= grayCode_rd_ptr;
+            grayCode_rd_ptr_synced <= rd_ptr_syncronizer;
             if (wr_ptr - binary_rd_ptr_synced >= 30 ) almost_full <= 1;                  
             else almost_full <= 0;
                                
@@ -106,14 +105,15 @@ module FIFO (
     end 
     
     always_ff@(posedge rd_clk, posedge rd_rst) begin
-        wr_ptr_syncronizer <= grayCode_wr_ptr;
-        binary_wr_ptr_synced <= wr_ptr_syncronizer;
         if(rd_rst) begin 
              almost_empty <= 0;
              empty  <= 0;
              rd_ptr <= 0;          
          end 
          else begin  
+            //Syncronizer
+            wr_ptr_syncronizer <= grayCode_wr_ptr;
+            binary_wr_ptr_synced <= wr_ptr_syncronizer;         
             if((rd_addr == binary_wr_ptr_synced[ADDR_WIDTH-1:0]) && (rd_wrap == binary_wr_ptr_synced[ADDR_WIDTH])) empty <= 1;
             else empty <= 0; 
             
