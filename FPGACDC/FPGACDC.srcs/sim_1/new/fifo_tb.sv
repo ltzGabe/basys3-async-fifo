@@ -30,7 +30,11 @@ module fifo_tb;
     logic [15:0] rd_data;
     logic full, almost_full, empty, almost_empty;
     initial wr_clk = 0;
-    initial rd_clk = 0;   
+    initial rd_clk = 0;
+    always #7  wr_clk = ~wr_clk;
+    always #13 rd_clk = ~rd_clk;   
+    
+    // Write then read sequential test 
     initial begin 
         wr_rst = 0; 
         rd_rst = 0;
@@ -38,19 +42,26 @@ module fifo_tb;
         #30 rd_rst = 1; 
         #30 wr_rst = 0;
         #30 rd_rst = 0; 
-    end
-    always #7  wr_clk = ~wr_clk;
-    always #13 rd_clk = ~rd_clk;
-    initial begin 
-            for (int i = 0; i < 63; i = i + 1) begin 
+    
+            wr_en = 1;
+            for (int i = 0; i < 66; i = i + 1) begin 
                 @(posedge wr_clk);
-                wr_en = 1;
+                
                 wr_data = i * 3'd2;
                 
                 $display("When the FIFO was %0d full the value for almost full and full was %0b, and %0b", i, almost_full, full);
             end      
             wr_en = 0;
-  
+            #50;
+             rd_en = 1;
+             for (int j = 0; j < 66; j = j + 1) begin 
+                @(posedge rd_clk);
+               
+                $display("When the FIFO was %0d empty the value for almost empty and empty was %0b, and %0b and the read data was %0d", j, almost_empty, empty,rd_data );
+            end  
+            rd_en = 0;
+            $finish;
+
        end
     FIFO dut (
         .wr_clk(wr_clk),

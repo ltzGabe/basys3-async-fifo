@@ -41,7 +41,7 @@ module FIFO (
     
     logic [ADDR_WIDTH:0] rd_ptr ;
     logic [ADDR_WIDTH:0] wr_ptr ;
-    logic [DATA_WIDTH-1:0] data [(ADDR_WIDTH**2)-1:0];   
+    logic [DATA_WIDTH-1:0] data [(2**ADDR_WIDTH)-1:0];   
 
     logic  rd_wrap;
     logic  wr_wrap;
@@ -66,13 +66,27 @@ module FIFO (
     logic [ADDR_WIDTH:0] binary_rd_ptr_synced;
     logic [ADDR_WIDTH:0] binary_wr_ptr_synced;
         
-    assign grayCode_rd_ptr =  rd_ptr ^ rd_ptr >> 1;
+    assign grayCode_rd_ptr =  rd_ptr ^ rd_ptr >>1;
     assign grayCode_wr_ptr =  wr_ptr ^ wr_ptr >>1;
     
     logic FIFO_FUll;
-    assign FIFO_FUll = (wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH]);
+    logic FIFO_EMPTY;
+    logic synced_wr_wrap;
+    logic synced_rd_wrap;
+    assign synced_wr_wrap  = binary_wr_ptr_synced[ADDR_WIDTH];
+    assign synced_rd_wrap  = binary_rd_ptr_synced[ADDR_WIDTH];
     
+    assign FIFO_FUll = ((wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != synced_rd_wrap));
+   
+    assign FIFO_EMPTY = ((rd_addr == binary_wr_ptr_synced[ADDR_WIDTH-1:0]) && (rd_wrap == synced_wr_wrap));
     genvar i;
+    
+    logic readNow;
+    assign readNow = rd_en && !FIFO_EMPTY;
+    
+    logic writeNow;
+    assign writeNow = wr_en && !FIFO_FUll;
+
     generate
         for(i=0;i<=ADDR_WIDTH;i++) begin
             assign binary_rd_ptr_synced[i] = ^(grayCode_rd_ptr_synced >> i);
@@ -97,7 +111,7 @@ module FIFO (
             if(FIFO_FUll) full <= 1;
             else full <= 0;            
               
-            if(wr_en && !FIFO_FUll) begin 
+            if(writeNow) begin 
                 data[wr_addr] <= wr_data; // Can only write to data when not full or almost full
                 wr_ptr <= wr_ptr +1;
             end         
@@ -108,19 +122,20 @@ module FIFO (
         if(rd_rst) begin 
              almost_empty <= 0;
              empty  <= 0;
-             rd_ptr <= 0;          
+             rd_ptr <= 0;  
          end 
          else begin  
             //Syncronizer
             wr_ptr_syncronizer <= grayCode_wr_ptr;
-            grayCode_wr_ptr_synced <= wr_ptr_syncronizer;         
-            if((rd_addr == binary_wr_ptr_synced[ADDR_WIDTH-1:0]) && (rd_wrap == binary_wr_ptr_synced[ADDR_WIDTH])) empty <= 1;
-            else empty <= 0; 
-            
-            if(binary_wr_ptr_synced - rd_ptr <= 2) almost_empty<=1; 
+            grayCode_wr_ptr_synced <= wr_ptr_syncronizer;      
+                
+            if(binary_wr_ptr_synced - rd_ptr <= 3) almost_empty<=1; 
             else almost_empty <= 0;  
-            
-            if(!empty && rd_en) begin // Can only read data when not full or almost full
+                       
+            if(FIFO_EMPTY) empty <= 1;
+            else empty <= 0; 
+           
+            if(readNow) begin // Can only read data when not full or almost full
                 rd_data <= data[rd_addr];
                 rd_ptr <= rd_ptr + 1; 
             end      
