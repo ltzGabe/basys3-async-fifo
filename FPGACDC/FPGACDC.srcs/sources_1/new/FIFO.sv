@@ -41,7 +41,7 @@ module FIFO (
     
     logic [ADDR_WIDTH:0] rd_ptr ;
     logic [ADDR_WIDTH:0] wr_ptr ;
-    logic [DATA_WIDTH-1:0] data [(2**ADDR_WIDTH)-1:0];   
+    logic [DATA_WIDTH-1:0] data [(ADDR_WIDTH**2)-1:0];   
 
     logic  rd_wrap;
     logic  wr_wrap;
