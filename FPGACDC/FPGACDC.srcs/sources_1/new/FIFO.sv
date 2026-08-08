@@ -22,9 +22,9 @@
 module FIFO (
     // Write domain
     input  logic                   wr_clk,
-    input  logic                   wr_rst,      // async assert, sync deassert - your choice how deep
+    input  logic                   wr_rst,      
     input  logic                   wr_en,
-    input  logic [15:0]  wr_data,
+    input  logic [15:0]            wr_data,
     output logic                   full,
     output logic                   almost_full,
 
@@ -32,7 +32,7 @@ module FIFO (
     input  logic                   rd_clk,
     input  logic                   rd_rst,
     input  logic                   rd_en,
-    output logic [15:0]  rd_data,
+    output logic [15:0]            rd_data,
     output logic                   empty,
     output logic                   almost_empty
 );
@@ -54,7 +54,6 @@ module FIFO (
     assign rd_wrap = rd_ptr[ADDR_WIDTH];
     assign wr_wrap = wr_ptr[ADDR_WIDTH];
 
-
     logic [ADDR_WIDTH:0] grayCode_rd_ptr ;
     logic [ADDR_WIDTH:0] grayCode_wr_ptr ;
     
@@ -66,19 +65,16 @@ module FIFO (
     
     logic [ADDR_WIDTH:0] binary_rd_ptr_synced;
     logic [ADDR_WIDTH:0] binary_wr_ptr_synced;
-
         
     assign grayCode_rd_ptr =  rd_ptr ^ rd_ptr >> 1;
     assign grayCode_wr_ptr =  wr_ptr ^ wr_ptr >>1;
     
-    
-    
     genvar i;
-     generate
-          for(i=0;i<ADDR_WIDTH;i++) begin
-          assign binary_rd_ptr_synced[i] = ^(grayCode_rd_ptr_synced >> i);
-          assign binary_wr_ptr_synced[i] = ^(grayCode_wr_ptr_synced >> i);
-     end
+    generate
+        for(i=0;i<ADDR_WIDTH;i++) begin
+            assign binary_rd_ptr_synced[i] = ^(grayCode_rd_ptr_synced >> i);
+            assign binary_wr_ptr_synced[i] = ^(grayCode_wr_ptr_synced >> i);
+        end
     endgenerate
 
     always_ff@(posedge wr_clk, posedge wr_rst) begin 
