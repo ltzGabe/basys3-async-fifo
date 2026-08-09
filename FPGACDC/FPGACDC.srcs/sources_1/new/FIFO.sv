@@ -71,7 +71,7 @@ module FIFO (
     
     genvar i;
     generate
-        for(i=0;i<ADDR_WIDTH;i++) begin
+        for(i=0;i<=ADDR_WIDTH;i++) begin
             assign binary_rd_ptr_synced[i] = ^(grayCode_rd_ptr_synced >> i);
             assign binary_wr_ptr_synced[i] = ^(grayCode_wr_ptr_synced >> i);
         end
@@ -87,7 +87,7 @@ module FIFO (
             //Syncronizer
             rd_ptr_syncronizer <= grayCode_rd_ptr;
             grayCode_rd_ptr_synced <= rd_ptr_syncronizer;
-            if (wr_ptr - binary_rd_ptr_synced >= 30 ) almost_full <= 1;                  
+            if (wr_ptr - binary_rd_ptr_synced == 30 ) almost_full <= 1;                  
             else almost_full <= 0;
                                
             if((wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH])) full <= 1;
@@ -109,7 +109,7 @@ module FIFO (
          else begin  
             //Syncronizer
             wr_ptr_syncronizer <= grayCode_wr_ptr;
-            binary_wr_ptr_synced <= wr_ptr_syncronizer;         
+            grayCode_wr_ptr_synced <= wr_ptr_syncronizer;         
             if((rd_addr == binary_wr_ptr_synced[ADDR_WIDTH-1:0]) && (rd_wrap == binary_wr_ptr_synced[ADDR_WIDTH])) empty <= 1;
             else empty <= 0; 
             
