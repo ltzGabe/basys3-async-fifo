@@ -69,6 +69,9 @@ module FIFO (
     assign grayCode_rd_ptr =  rd_ptr ^ rd_ptr >> 1;
     assign grayCode_wr_ptr =  wr_ptr ^ wr_ptr >>1;
     
+    logic FIFO_FUll;
+    assign FIFO_FUll = (wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH]);
+    
     genvar i;
     generate
         for(i=0;i<=ADDR_WIDTH;i++) begin
@@ -85,15 +88,16 @@ module FIFO (
         end
         else begin 
             //Syncronizer
+            full <= FIFO_FUll; 
             rd_ptr_syncronizer <= grayCode_rd_ptr;
             grayCode_rd_ptr_synced <= rd_ptr_syncronizer;
-            if (wr_ptr - binary_rd_ptr_synced == 30 ) almost_full <= 1;                  
+            if (wr_ptr - binary_rd_ptr_synced >= 30 ) almost_full <= 1;                  
             else almost_full <= 0;
                                
-            if((wr_addr == binary_rd_ptr_synced[ADDR_WIDTH-1:0]) && (wr_wrap != binary_rd_ptr_synced[ADDR_WIDTH])) full <= 1;
+            if(FIFO_FUll) full <= 1;
             else full <= 0;            
               
-            if(wr_en && !full) begin 
+            if(wr_en && !FIFO_FUll) begin 
                 data[wr_addr] <= wr_data; // Can only write to data when not full or almost full
                 wr_ptr <= wr_ptr +1;
             end         
